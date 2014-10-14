@@ -13374,7 +13374,6 @@ var Cell = function Cell(board, index, pos) {
   },
   claimBorder: function(border) {
     this.bordersClaimed[border] = true;
-    this.cell.css('border-' + border, '2px solid blue');
     this.displayBordersClaimed();
     this.checkClaimed();
   },

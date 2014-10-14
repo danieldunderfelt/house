@@ -1,5 +1,5 @@
 var App = require('./App');
-var $ = require('jquery');
+window.$ = require('jquery');
 
 $(function() {
 	App.start();

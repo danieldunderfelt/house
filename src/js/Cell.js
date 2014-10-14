@@ -21,6 +21,7 @@ class Cell {
 
 	render(callback) {
 		this.claimInitialBorders();
+		this.displayBordersClaimed();
 		this.board.addCell(this.cell);
 		setTimeout(this.renderAnim.call(this, callback), Math.floor(Math.random() * 800) + 300);
 	}
@@ -61,6 +62,34 @@ class Cell {
 
 	claimBorder(border) {
 		this.bordersClaimed[border] = true;
+		this.cell.css('border-' + border, '2px solid blue');
+		this.displayBordersClaimed();
+		this.checkClaimed();
+	}
+
+	displayBordersClaimed() {
+		var count = 0;
+		for(var border in this.bordersClaimed) {
+			if(this.bordersClaimed[border] === true) count++;
+		}
+		this.cell.text(count + "/4");
+	}
+
+	checkClaimed() {
+		var bc = this.bordersClaimed;
+		if(bc.top && bc.bottom && bc.left && bc.right) {
+			this.claimed = true;
+			this.owner = this.board.game.getPlayer();
+			this.celebrate();
+		}
+	}
+
+	celebrate() {
+		if(this.owner !== null) {
+			this.cell
+			.css('background-color', this.owner.color)
+			.text(this.owner.name);
+		}
 	}
 
 	template() {

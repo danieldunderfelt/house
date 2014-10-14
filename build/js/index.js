@@ -13045,7 +13045,8 @@ module.exports = new App();
 var Cell = require('./Cell');
 var Borders = require('./Borders');
 var $ = require('jquery');
-var Board = function Board() {
+var Board = function Board(game) {
+  this.game = game;
   this.$board = $('#board');
   this.grid = [];
   this.cells = [];
@@ -13053,9 +13054,43 @@ var Board = function Board() {
   this.borders = {};
 };
 ($traceurRuntime.createClass)(Board, {
+  claimBorder: function(coords) {
+    var cellData = this.getCellFromLineCoords(coords);
+    var neighbor = this.getCellNeighbor(cellData);
+    var cellBorder = coords.track === "y" ? "right" : "bottom";
+    var neighborBorder = coords.track === "y" ? "left" : "top";
+    cellData.cell.claimBorder(cellBorder);
+    neighbor.claimBorder(neighborBorder);
+  },
+  getCellFromLineCoords: function(coords) {
+    var cell = null;
+    var index = 0;
+    for (var c = 0; c < this.cells.length; c++) {
+      var cellCol = c % 10;
+      var cellRow = Math.floor(c / 10);
+      if (cellRow + 1 === coords.y && cellCol + 1 === coords.x) {
+        cell = this.cells[c];
+        index = c;
+        break;
+      }
+    }
+    return {
+      cell: cell,
+      index: index,
+      track: coords.track
+    };
+  },
+  getCellNeighbor: function(cellData) {
+    if (cellData.track === "y") {
+      return this.cells[cellData.index + 1];
+    } else if (cellData.track = "x") {
+      return this.cells[cellData.index + 10];
+    } else
+      return null;
+  },
   render: function(size) {
     this.createGrid(size);
-    this.borders = new Borders(this, this.grid);
+    this.borders = new Borders(this);
     for (var c = 0; c < this.grid.length; c++) {
       var pos = this.grid[c];
       var cell = new Cell(this, c, pos);
@@ -13125,9 +13160,8 @@ function throttle(e, t, n) {
     }
   };
 }
-var Borders = function Borders(board, grid) {
+var Borders = function Borders(board) {
   this.board = board;
-  this.grid = grid;
   this.canvas = document.getElementById('borders');
   this.ctx = this.canvas.getContext('2d');
   this.width = this.canvas.width;
@@ -13136,6 +13170,7 @@ var Borders = function Borders(board, grid) {
   this.indicatorData = null;
   this.refinedCoords = null;
   this.doRender = false;
+  this.startListeners();
 };
 ($traceurRuntime.createClass)(Borders, {
   renderInitial: function() {
@@ -13148,12 +13183,12 @@ var Borders = function Borders(board, grid) {
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = '#444444';
     this.ctx.stroke();
-    this.startListeners();
   },
   startListeners: function() {
     this.canvas.addEventListener('mousemove', throttle(this.indicateLine, 30, this));
     this.canvas.addEventListener('mouseover', this.startIndicatorRender.bind(this));
     this.canvas.addEventListener('mouseout', this.stopIndicatorRender.bind(this));
+    this.canvas.addEventListener('click', this.placeLine.bind(this));
   },
   indicateLine: function(e) {
     var coords = this.getLinePosition(e.offsetX, e.offsetY, e.movementX, e.movementY);
@@ -13161,10 +13196,27 @@ var Borders = function Borders(board, grid) {
       this.setIndicatorData(coords);
     }
   },
+  placeLine: function() {
+    if (this.placementAllowed()) {
+      this.linesClaimed.push(this.refinedCoords);
+      this.board.claimBorder(this.indicatorData);
+    }
+  },
+  placementAllowed: function() {
+    var allowed = true;
+    var checkCoords = this.refinedCoords;
+    for (var a = 0; a < this.linesClaimed.length; a++) {
+      if (JSON.stringify(checkCoords) === JSON.stringify(this.linesClaimed[a])) {
+        allowed = false;
+      }
+    }
+    return allowed;
+  },
   getLinePosition: function(x, y, moveX, moveY) {
     var trackX = Math.floor((x * 1.6) / 100) + 1;
     var trackY = Math.floor((y * 1.6) / 100) + 1;
     var side = "";
+    var track = "";
     if (moveX < 0 && moveX < moveY)
       side = "left";
     else if (moveX > 0 && moveX > moveY)
@@ -13173,10 +13225,17 @@ var Borders = function Borders(board, grid) {
       side = "up";
     else if (moveX < moveY && moveY > 0)
       side = "down";
+    if (side === "left" || side === "right") {
+      track = "x";
+      trackY = trackY > 9 ? 9 : trackY;
+    } else {
+      track = "y";
+      trackX = trackX > 9 ? 9 : trackX;
+    }
     return {
       x: trackX,
       y: trackY,
-      side: side
+      track: track
     };
   },
   coordsChanged: function(coords) {
@@ -13210,8 +13269,10 @@ var Borders = function Borders(board, grid) {
   },
   drawIndicator: function() {
     this.clear();
+    this.renderInitial();
     this.drawClaimed();
-    this.drawLine(this.indicatorData);
+    this.refinedCoords = this.getRefinedCoords();
+    this.drawLine(this.refinedCoords, '#999999');
     this.renderIndicator();
   },
   drawClaimed: function() {
@@ -13220,28 +13281,26 @@ var Borders = function Borders(board, grid) {
     }
   },
   drawLine: function(coords) {
-    this.refinedCoords = this.decipherCoords(coords);
+    var color = arguments[1] !== (void 0) ? arguments[1] : '#444444';
     this.ctx.beginPath();
-    this.ctx.moveTo.apply(this.ctx, this.refinedCoords.from);
-    this.ctx.lineTo.apply(this.ctx, this.refinedCoords.to);
+    this.ctx.moveTo.apply(this.ctx, coords.from);
+    this.ctx.lineTo.apply(this.ctx, coords.to);
     this.ctx.lineWidth = 4;
-    this.ctx.strokeStyle = '#444444';
+    this.ctx.strokeStyle = color;
     this.ctx.stroke();
   },
-  decipherCoords: function(coords) {
-    var track = coords.side === "left" || coords.side === "right" ? "x" : "y";
+  getRefinedCoords: function() {
+    var coords = this.indicatorData;
     var x = coords.x;
     var y = coords.y;
     var coord = {};
-    if (track === "y") {
-      x = x > 9 ? 9 : x;
+    if (coords.track === "y") {
       coord = {
         from: [x * 60, (y - 1) * 60],
         to: [x * 60, y * 60]
       };
     }
-    if (track === "x") {
-      y = y > 9 ? 9 : y;
+    if (coords.track === "x") {
       coord = {
         from: [(x - 1) * 60, y * 60],
         to: [x * 60, y * 60]
@@ -13277,6 +13336,7 @@ var Cell = function Cell(board, index, pos) {
 ($traceurRuntime.createClass)(Cell, {
   render: function(callback) {
     this.claimInitialBorders();
+    this.displayBordersClaimed();
     this.board.addCell(this.cell);
     setTimeout(this.renderAnim.call(this, callback), Math.floor(Math.random() * 800) + 300);
   },
@@ -13314,6 +13374,30 @@ var Cell = function Cell(board, index, pos) {
   },
   claimBorder: function(border) {
     this.bordersClaimed[border] = true;
+    this.cell.css('border-' + border, '2px solid blue');
+    this.displayBordersClaimed();
+    this.checkClaimed();
+  },
+  displayBordersClaimed: function() {
+    var count = 0;
+    for (var border in this.bordersClaimed) {
+      if (this.bordersClaimed[border] === true)
+        count++;
+    }
+    this.cell.text(count + "/4");
+  },
+  checkClaimed: function() {
+    var bc = this.bordersClaimed;
+    if (bc.top && bc.bottom && bc.left && bc.right) {
+      this.claimed = true;
+      this.owner = this.board.game.getPlayer();
+      this.celebrate();
+    }
+  },
+  celebrate: function() {
+    if (this.owner !== null) {
+      this.cell.css('background-color', this.owner.color).text(this.owner.name);
+    }
   },
   template: function() {
     return $('<div class="cell" data-index="' + this.index + '" data-x="' + this.pos.x + '" data-y="' + this.pos.y + '"></div>');
@@ -13329,10 +13413,18 @@ var Game = function Game() {
   this.participants = {};
   this.board = {};
 };
-($traceurRuntime.createClass)(Game, {start: function() {
+($traceurRuntime.createClass)(Game, {
+  start: function() {
     this.board = new Board(this);
     this.board.render(10);
-  }}, {});
+  },
+  getPlayer: function() {
+    return {
+      name: "Daniel",
+      color: "green"
+    };
+  }
+}, {});
 module.exports = Game;
 
 
@@ -13365,7 +13457,7 @@ module.exports = UI;
 },{"jquery":1}],9:[function(require,module,exports){
 "use strict";
 var App = require('./App');
-var $ = require('jquery');
+window.$ = require('jquery');
 $(function() {
   App.start();
 });

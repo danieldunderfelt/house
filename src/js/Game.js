@@ -11,6 +11,13 @@ class Game {
 		this.board = new Board(this);
 		this.board.render(10);
 	}
+
+	getPlayer() {
+		return {
+			name: "Daniel",
+			color: "green"
+		};
+	}
 }
 
 module.exports = Game;

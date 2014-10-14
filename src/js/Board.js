@@ -4,7 +4,8 @@ var $ = require('jquery');
 
 class Board {
 
-	constructor() {
+	constructor(game) {
+		this.game = game;
 		this.$board = $('#board');
 		this.grid = [];
 		this.cells = [];
@@ -12,9 +13,52 @@ class Board {
 		this.borders = {};
 	}
 
+	claimBorder(coords) {
+		var cellData = this.getCellFromLineCoords(coords);
+		var neighbor = this.getCellNeighbor(cellData);
+
+		var cellBorder = coords.track === "y" ? "right" : "bottom";
+		var neighborBorder = coords.track === "y" ? "left" : "top";
+
+		cellData.cell.claimBorder(cellBorder);
+		neighbor.claimBorder(neighborBorder);
+	}
+
+	getCellFromLineCoords(coords) {
+		var cell = null;
+		var index = 0;
+
+		for(var c = 0; c < this.cells.length; c++) {
+			var cellCol = c % 10;
+			var cellRow = Math.floor(c / 10);
+
+			if(cellRow + 1 === coords.y && cellCol + 1 === coords.x) {
+				cell = this.cells[c];
+				index = c;
+				break;
+			}
+		}
+
+		return {
+			cell: cell,
+			index: index,
+			track: coords.track
+		};
+	}
+
+	getCellNeighbor(cellData) {
+		if(cellData.track === "y") {
+			return this.cells[cellData.index + 1];
+		}
+		else if(cellData.track = "x") {
+			return this.cells[cellData.index + 10];
+		}
+		else return null;
+	}
+
 	render(size) {
 		this.createGrid(size);
-		this.borders = new Borders(this, this.grid);
+		this.borders = new Borders(this);
 
 		for(var c = 0; c < this.grid.length; c++) {
 			var pos = this.grid[c];

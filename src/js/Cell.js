@@ -36,8 +36,8 @@ class Cell {
 			easing: 'easeOutBounce',
 			begin: function() {
 				self.cell.css({
-					top: self.pos.y + '0.5%',
-					left: self.pos.x + '0.5%'
+					top: (self.pos.y * 60 ) + 2 + 'px',
+					left: (self.pos.x * 60 ) + 2 + 'px'
 				});
 			},
 			complete: callback

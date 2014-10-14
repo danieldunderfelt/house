@@ -13132,6 +13132,10 @@ var Borders = function Borders(board, grid) {
   this.ctx = this.canvas.getContext('2d');
   this.width = this.canvas.width;
   this.height = this.canvas.height;
+  this.linesClaimed = [];
+  this.indicatorData = null;
+  this.refinedCoords = null;
+  this.doRender = false;
 };
 ($traceurRuntime.createClass)(Borders, {
   renderInitial: function() {
@@ -13148,29 +13152,105 @@ var Borders = function Borders(board, grid) {
   },
   startListeners: function() {
     this.canvas.addEventListener('mousemove', throttle(this.indicateLine, 30, this));
+    this.canvas.addEventListener('mouseover', this.startIndicatorRender.bind(this));
+    this.canvas.addEventListener('mouseout', this.stopIndicatorRender.bind(this));
   },
   indicateLine: function(e) {
-    this.clear();
     var coords = this.getLinePosition(e.offsetX, e.offsetY, e.movementX, e.movementY);
-    this.drawLine(coords);
+    if (this.coordsChanged(coords)) {
+      this.setIndicatorData(coords);
+    }
   },
   getLinePosition: function(x, y, moveX, moveY) {
-    var posX = Math.round((x * 1.4) / 100) + 1;
-    var posY = Math.round((y * 1.4) / 100) + 1;
-    var dir = "up";
+    var trackX = Math.floor((x * 1.6) / 100) + 1;
+    var trackY = Math.floor((y * 1.6) / 100) + 1;
+    var side = "";
     if (moveX < 0 && moveX < moveY)
-      dir = "left";
-    if (moveX > 0 && moveX > moveY)
-      dir = "right";
-    if (moveX > moveX && moveY < 0)
-      dir = "up";
-    if (moveX < moveY && moveY > 0)
-      dir = "down";
-    console.log(dir);
+      side = "left";
+    else if (moveX > 0 && moveX > moveY)
+      side = "right";
+    else if (moveX < moveY && moveY < 0)
+      side = "up";
+    else if (moveX < moveY && moveY > 0)
+      side = "down";
+    return {
+      x: trackX,
+      y: trackY,
+      side: side
+    };
   },
-  drawLine: function(coords) {},
+  coordsChanged: function(coords) {
+    if (this.indicatorData !== null) {
+      var passes = false;
+      if (coords.x > this.indicatorData.x || coords.x < this.indicatorData.x) {
+        passes = true;
+      }
+      if (coords.y > this.indicatorData.y || coords.y < this.indicatorData.y) {
+        passes = true;
+      }
+      return passes;
+    }
+    return true;
+  },
+  setIndicatorData: function(coords) {
+    this.indicatorData = coords;
+  },
+  startIndicatorRender: function() {
+    this.doRender = true;
+    this.renderIndicator();
+  },
+  stopIndicatorRender: function() {
+    this.doRender = false;
+  },
+  renderIndicator: function() {
+    var self = this;
+    if (this.doRender) {
+      requestAnimationFrame(this.drawIndicator.bind(this));
+    }
+  },
+  drawIndicator: function() {
+    this.clear();
+    this.drawClaimed();
+    this.drawLine(this.indicatorData);
+    this.renderIndicator();
+  },
+  drawClaimed: function() {
+    for (var c = 0; c < this.linesClaimed.length; c++) {
+      this.drawLine(this.linesClaimed[c]);
+    }
+  },
+  drawLine: function(coords) {
+    this.refinedCoords = this.decipherCoords(coords);
+    this.ctx.beginPath();
+    this.ctx.moveTo.apply(this.ctx, this.refinedCoords.from);
+    this.ctx.lineTo.apply(this.ctx, this.refinedCoords.to);
+    this.ctx.lineWidth = 4;
+    this.ctx.strokeStyle = '#444444';
+    this.ctx.stroke();
+  },
+  decipherCoords: function(coords) {
+    var track = coords.side === "left" || coords.side === "right" ? "x" : "y";
+    var x = coords.x;
+    var y = coords.y;
+    var coord = {};
+    if (track === "y") {
+      x = x > 9 ? 9 : x;
+      coord = {
+        from: [x * 60, (y - 1) * 60],
+        to: [x * 60, y * 60]
+      };
+    }
+    if (track === "x") {
+      y = y > 9 ? 9 : y;
+      coord = {
+        from: [(x - 1) * 60, y * 60],
+        to: [x * 60, y * 60]
+      };
+    }
+    return coord;
+  },
   clear: function() {
-    this.ctx.clearRect(4, 4, this.canvas.width - 8, this.canvas.height - 8);
+    this.ctx.clearRect(2, 2, this.canvas.width - 4, this.canvas.height - 4);
   }
 }, {});
 module.exports = Borders;
@@ -13211,8 +13291,8 @@ var Cell = function Cell(board, index, pos) {
       easing: 'easeOutBounce',
       begin: function() {
         self.cell.css({
-          top: self.pos.y + '0.5%',
-          left: self.pos.x + '0.5%'
+          top: (self.pos.y * 60) + 2 + 'px',
+          left: (self.pos.x * 60) + 2 + 'px'
         });
       },
       complete: callback

@@ -6,6 +6,7 @@
 	background: #ccc;
 
 	.board {
+		cursor: pointer;
 		width: 600px;
 		height: 600px;
 		position: absolute;
@@ -25,8 +26,8 @@
 }
 
 .cell {
-	width: 9%;
-	height: 9%;
+	width: 56px;
+	height: 56px;
 	position: absolute;
 	background-color: #eee;
 	opacity: 0;

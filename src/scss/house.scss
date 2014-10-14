@@ -1,3 +1,9 @@
 body {
-	background: #ccc;
+	background: #dadada;
 }
+
+.container {
+	margin: 20px auto;
+}
+
+@import 'board';

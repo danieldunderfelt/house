@@ -1,6 +1,6 @@
-var app = require('./App');
+var App = require('./App');
+var $ = require('jquery');
 
-(function() {
-	var game = new app();
-	game.start();
-})();
+$(function() {
+	App.start();
+});

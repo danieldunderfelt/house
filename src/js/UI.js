@@ -27,7 +27,7 @@ class UI {
 	handlePlayerForm(e) {
 		e.preventDefault();
 		var data = $(e.currentTarget).serializeArray();
-		this.app.getInitialPlayer(data);
+		this.app.getLocalPlayer(data);
 	}
 
 	showGame() {

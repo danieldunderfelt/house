@@ -13028,14 +13028,14 @@ var UI = require('./UI');
 var Participant = require('./Participant');
 var Game = require('./Game');
 var App = function App() {
-  this.initialPlayer = {};
+  this.localPlayer = {};
 };
 ($traceurRuntime.createClass)(App, {
   start: function() {
     this.front = new UI(this);
     this.front.initialize();
     if (location.hostname === "localhost") {
-      this.initialPlayer = this.createPlayer("Daniel", "green", true);
+      this.localPlayer = new Participant("Daniel", "green", true);
       this.initializeGame();
     }
   },
@@ -13043,7 +13043,7 @@ var App = function App() {
     this.front.showGame();
     this.bootGame();
   },
-  getInitialPlayer: function(data) {
+  getlocalPlayer: function(data) {
     var name = "Awesome player";
     var color = "#FF0000";
     for (var d = 0; d < data.length; d++) {
@@ -13053,22 +13053,12 @@ var App = function App() {
       if (dataElement.name === "color")
         color = dataElement.value;
     }
-    this.initialPlayer = this.createPlayer(name, color, true);
+    this.localPlayer = new Participant(name, color, true);
     this.initializeGame();
-  },
-  createPlayer: function(name, color) {
-    var isHost = arguments[2] !== (void 0) ? arguments[2] : false;
-    return new Participant(name, color, isHost);
-  },
-  addPlayerToGame: function(player) {
-    this.game.addPlayer(player);
   },
   bootGame: function() {
     this.game = new Game(this);
-    this.game.initialize(this.initialPlayer);
-  },
-  newGame: function() {
-    this.game.start();
+    this.game.initialize(this.localPlayer);
   }
 }, {});
 module.exports = new App();
@@ -13423,7 +13413,7 @@ var Cell = function Cell(board, index, pos) {
     var bc = this.bordersClaimed;
     if (bc.top && bc.bottom && bc.left && bc.right) {
       this.claimed = true;
-      this.owner = this.board.game.getPlayer();
+      this.owner = this.board.game.playerScored();
       this.celebrate();
     }
   },
@@ -13448,6 +13438,7 @@ var Game = function Game(app) {
   this.players = {};
   this.clientPlayer = {};
   this.isStarted = false;
+  this.currentPlayerTurn = {};
 };
 ($traceurRuntime.createClass)(Game, {
   initialize: function(initialPlayer) {
@@ -13467,7 +13458,8 @@ var Game = function Game(app) {
   },
   getPlayer: function() {
     return this.clientPlayer;
-  }
+  },
+  playerScored: function() {}
 }, {});
 module.exports = Game;
 
@@ -13518,7 +13510,7 @@ var UI = function UI(app) {
   handlePlayerForm: function(e) {
     e.preventDefault();
     var data = $(e.currentTarget).serializeArray();
-    this.app.getInitialPlayer(data);
+    this.app.getLocalPlayer(data);
   },
   showGame: function() {
     var $startScreen = $('.start-screen');

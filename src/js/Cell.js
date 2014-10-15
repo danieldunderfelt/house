@@ -76,9 +76,10 @@ class Cell {
 
 	checkClaimed() {
 		var bc = this.bordersClaimed;
+
 		if(bc.top && bc.bottom && bc.left && bc.right) {
 			this.claimed = true;
-			this.owner = this.board.game.getPlayer();
+			this.owner = this.board.game.playerScored();
 			this.celebrate();
 		}
 	}

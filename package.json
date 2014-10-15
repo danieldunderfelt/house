@@ -7,7 +7,10 @@
     "url": "git://github.com/danieldunderfelt/house.git"
   },
   "browserify": {
-    "transform": ["browserify-shim", "es6ify"]
+    "transform": [
+      "browserify-shim",
+      "es6ify"
+    ]
   },
   "browserify-shim": {
     "./build/js/vendor/traceur-runtime.js": "global:$traceurRuntime"
@@ -17,10 +20,10 @@
     "browserify-shim": "^3.8.0",
     "es6ify": "^1.4.0",
     "gulp": "^3.8.7",
-    "gulp-notify": "^1.4.2",
+    "gulp-notify": "^2.0.0",
     "gulp-sass": "^1.1.0",
     "gulp-sourcemaps": "~1.2.4",
-    "vinyl-source-stream": "~0.1.1",
+    "vinyl-source-stream": "^1.0.0",
     "vinyl-transform": "0.0.1",
     "watchify": "^2.0.0"
   },

@@ -6,15 +6,14 @@ class Game {
 		this.app = app;
 		this.board = {};
 		this.players = {};
-		this.clientPlayer = {};
-
+		this.localPlayer = {};
 		this.isStarted = false;
+		this.currentPlayerTurn = null;
 	}
 
 	initialize(initialPlayer) {
-		this.clientPlayer = initialPlayer;
-		this.addPlayer(this.clientPlayer);
-
+		this.localPlayer = initialPlayer;
+		this.addPlayer(this.localPlayer);
 		this.app.front.renderPlayersList(this.players);
 	}
 
@@ -27,11 +26,17 @@ class Game {
 			this.isStarted = true;
 			this.board = new Board(this);
 			this.board.render(10);
+
+			this.turnLoop();
 		}
 	}
 
 	getPlayer() {
-		return this.clientPlayer;
+		return this.localPlayer;
+	}
+
+	playerScored() {
+
 	}
 }
 

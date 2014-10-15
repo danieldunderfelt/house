@@ -5,7 +5,7 @@ var Game = require('./Game');
 class App {
 
 	constructor() {
-		this.initialPlayer = {};
+		this.localPlayer = {};
 	}
 
 	start() {
@@ -13,7 +13,7 @@ class App {
 		this.front.initialize();
 
 		if(location.hostname === "localhost") {
-			this.initialPlayer = this.createPlayer("Daniel", "green", true);
+			this.localPlayer = new Participant("Daniel", "green", true);
 			this.initializeGame();
 		}
 	}
@@ -21,9 +21,11 @@ class App {
 	initializeGame() {
 		this.front.showGame();
 		this.bootGame();
+
+		// server.connect()
 	}
 
-	getInitialPlayer(data) {
+	getlocalPlayer(data) {
 		var name = "Awesome player";
 		var color = "#FF0000";
 
@@ -33,25 +35,13 @@ class App {
 			if(dataElement.name === "color") color = dataElement.value;
 		}
 
-		this.initialPlayer = this.createPlayer(name, color, true);
+		this.localPlayer = new Participant(name, color, true);
 		this.initializeGame();
-	}
-
-	createPlayer(name, color, isHost = false) {
-		return new Participant(name, color, isHost);
-	}
-
-	addPlayerToGame(player) {
-		this.game.addPlayer(player);
 	}
 
 	bootGame() {
 		this.game = new Game(this);
-		this.game.initialize(this.initialPlayer);
-	}
-
-	newGame() {
-		this.game.start();
+		this.game.initialize(this.localPlayer);
 	}
 }
 

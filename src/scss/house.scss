@@ -8,20 +8,23 @@ body {
 }
 
 .container-fluid {
-	height: 100%;
+
 }
 
 .header {
 	padding-top: 2em;
 	padding-bottom: 2em;
 	margin-bottom: 3em;
-	height: auto;
 	background: #009DFF;
 	color: white;
 
 	h1 {
 		margin: 0;
 	}
+}
+
+.main-game {
+	display: none;
 }
 
 ul {
@@ -72,4 +75,5 @@ h4 {
 	margin: 0;
 }
 
+@import 'start-screen';
 @import 'board';

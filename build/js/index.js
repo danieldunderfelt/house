@@ -13025,22 +13025,56 @@ will produce an inaccurate conversion value. The same issue exists with the cx/c
 },{}],3:[function(require,module,exports){
 "use strict";
 var UI = require('./UI');
+var Participant = require('./Participant');
 var Game = require('./Game');
-var App = function App() {};
+var App = function App() {
+  this.initialPlayer = {};
+};
 ($traceurRuntime.createClass)(App, {
   start: function() {
     this.front = new UI(this);
     this.front.initialize();
+    if (location.hostname === "localhost") {
+      this.initialPlayer = this.createPlayer("Daniel", "green", true);
+      this.initializeGame();
+    }
+  },
+  initializeGame: function() {
+    this.front.showGame();
+    this.bootGame();
+  },
+  getInitialPlayer: function(data) {
+    var name = "Awesome player";
+    var color = "#FF0000";
+    for (var d = 0; d < data.length; d++) {
+      var dataElement = data[d];
+      if (dataElement.name === "name")
+        name = dataElement.value;
+      if (dataElement.name === "color")
+        color = dataElement.value;
+    }
+    this.initialPlayer = this.createPlayer(name, color, true);
+    this.initializeGame();
+  },
+  createPlayer: function(name, color) {
+    var isHost = arguments[2] !== (void 0) ? arguments[2] : false;
+    return new Participant(name, color, isHost);
+  },
+  addPlayerToGame: function(player) {
+    this.game.addPlayer(player);
+  },
+  bootGame: function() {
+    this.game = new Game(this);
+    this.game.initialize(this.initialPlayer);
   },
   newGame: function() {
-    this.game = new Game();
     this.game.start();
   }
 }, {});
 module.exports = new App();
 
 
-},{"./Game":7,"./UI":8}],4:[function(require,module,exports){
+},{"./Game":7,"./Participant":8,"./UI":9}],4:[function(require,module,exports){
 "use strict";
 var Cell = require('./Cell');
 var Borders = require('./Borders');
@@ -13408,20 +13442,31 @@ module.exports = Cell;
 },{"jquery":1,"velocity-animate":2}],7:[function(require,module,exports){
 "use strict";
 var Board = require('./Board');
-var Game = function Game() {
-  this.participants = {};
+var Game = function Game(app) {
+  this.app = app;
   this.board = {};
+  this.players = {};
+  this.clientPlayer = {};
+  this.isStarted = false;
 };
 ($traceurRuntime.createClass)(Game, {
+  initialize: function(initialPlayer) {
+    this.clientPlayer = initialPlayer;
+    this.addPlayer(this.clientPlayer);
+    this.app.front.renderPlayersList(this.players);
+  },
+  addPlayer: function(player) {
+    this.players[player.name] = player;
+  },
   start: function() {
-    this.board = new Board(this);
-    this.board.render(10);
+    if (!this.isStarted) {
+      this.isStarted = true;
+      this.board = new Board(this);
+      this.board.render(10);
+    }
   },
   getPlayer: function() {
-    return {
-      name: "Daniel",
-      color: "green"
-    };
+    return this.clientPlayer;
   }
 }, {});
 module.exports = Game;
@@ -13429,7 +13474,29 @@ module.exports = Game;
 
 },{"./Board":4}],8:[function(require,module,exports){
 "use strict";
+var Participant = function Participant(name, color, isHost) {
+  this.name = name;
+  this.color = color;
+  this.score = 0;
+  this.cellsClaimed = [];
+  this.winner = false;
+  this.isHost = isHost;
+};
+($traceurRuntime.createClass)(Participant, {getInfo: function() {
+    return {
+      name: this.name,
+      color: this.color,
+      points: this.points,
+      isHost: this.isHost
+    };
+  }}, {});
+module.exports = Participant;
+
+
+},{}],9:[function(require,module,exports){
+"use strict";
 var $ = require('jquery');
+var Velocity = require('velocity-animate');
 var UI = function UI(app) {
   this.app = app;
 };
@@ -13438,8 +13505,30 @@ var UI = function UI(app) {
     this.startListeners();
   },
   startListeners: function() {
+    $('input[name="color"]').on('keyup', this.showColor.bind(this));
+    $('#startForm').on('submit', this.handlePlayerForm.bind(this));
     $('#newGame').on('click', this.startNewGame.bind(this));
     $(window).on('boardrendered', this.boardRendered.bind(this));
+  },
+  showColor: function(e) {
+    var colorPreview = $('#colorPreview');
+    var colorInput = $(e.currentTarget).val();
+    colorPreview.css('background', colorInput);
+  },
+  handlePlayerForm: function(e) {
+    e.preventDefault();
+    var data = $(e.currentTarget).serializeArray();
+    this.app.getInitialPlayer(data);
+  },
+  showGame: function() {
+    var $startScreen = $('.start-screen');
+    var $mainGame = $('.main-game');
+    Velocity($startScreen[0], 'slideUp', {
+      duration: 500,
+      complete: function() {
+        Velocity($mainGame[0], 'slideDown', 500);
+      }
+    });
   },
   startNewGame: function(e) {
     e.preventDefault();
@@ -13448,12 +13537,28 @@ var UI = function UI(app) {
   },
   boardRendered: function(e) {
     console.log("board rendered!");
+  },
+  renderPlayersList: function(players) {
+    for (var player in players) {
+      this.addToPlayerList(players[player]);
+    }
+  },
+  addToPlayerList: function(player) {
+    var $template = $('<li data-player="' + player.name + '"><h4>' + player.name + '</h4><span class="score">' + player.score + '</span></li>');
+    if (player.isHost) {
+      $template.prepend('<span class="host">Host</span>');
+    }
+    $template.css('background-color', player.color);
+    $('#participants').append($template);
+  },
+  setPlayerScore: function(player) {
+    var $playerList = $('#participants');
   }
 }, {});
 module.exports = UI;
 
 
-},{"jquery":1}],9:[function(require,module,exports){
+},{"jquery":1,"velocity-animate":2}],10:[function(require,module,exports){
 "use strict";
 var App = require('./App');
 window.$ = require('jquery');
@@ -13462,4 +13567,4 @@ $(function() {
 });
 
 
-},{"./App":3,"jquery":1}]},{},[9]);
+},{"./App":3,"jquery":1}]},{},[10]);

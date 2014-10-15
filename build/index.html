@@ -14,7 +14,17 @@
 			The house game
 		</h1>
 	</header>
-	<main class="container-fluid">
+	<section class="start-screen container">
+		<h2>
+			Please enter your name and your favourite colour in HEX format:
+		</h2>
+		<form action="#" id="startForm">
+			<input type="text" name="name" placeholder="Name">
+			<input type="text" name="color" placeholder="#FF0000"><div class="color-preview" id="colorPreview"></div>
+			<button type="submit">Ok, let's begin!</button>
+		</form>
+	</section>
+	<main class="main-game container-fluid">
 		<div class="row">
 			<nav class="col-md-3 control">
 				<ul>
@@ -33,17 +43,7 @@
 					Participants:
 				</h3>
 				<ul id="participants">
-					<li>
-						<span class="host">Host</span>
-						<h4>Daniel Dunderfelt</h4>
-						<span class="score">0</span>
-					</li>
-					<li>
-						<h4>
-							Someone
-						</h4>
-						<span class="score">0</span>
-					</li>
+
 				</ul>
 			</nav>
 		</div>

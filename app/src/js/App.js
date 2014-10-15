@@ -1,11 +1,13 @@
 var UI = require('./UI');
 var Participant = require('./Participant');
 var Game = require('./Game');
+var Server = require('./Server');
 
 class App {
 
 	constructor() {
 		this.localPlayer = {};
+		this.server = new Server(this);
 	}
 
 	start() {
@@ -22,7 +24,7 @@ class App {
 		this.front.showGame();
 		this.bootGame();
 
-		// server.connect()
+		this.server.connect()
 	}
 
 	getlocalPlayer(data) {

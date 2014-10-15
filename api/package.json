@@ -1,0 +1,22 @@
+{
+  "name": "house-api",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Dunderfelt",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.9.7",
+    "socket.io": "^1.1.0",
+    "traceur": "0.0.67",
+    "traceur-runtime": "0.0.59"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.8",
+    "gulp-express": "^0.1.0",
+    "gulp-traceur": "^0.13.0"
+  }
+}

@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "jquery": "^2.1.1",
+    "socket.io-client": "^1.1.0",
     "traceur": "0.0.66",
     "velocity-animate": "~1.1.0"
   }

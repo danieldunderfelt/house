@@ -20,9 +20,7 @@ var handleErrors = function() {
 
 gulp.task('browser-sync', function() {
 	browserSync({
-		server: {
-			baseDir: "./build"
-		},
+		proxy: "house.dev",
 		open: false,
 		notify: false
 	});

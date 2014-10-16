@@ -14,7 +14,7 @@ class UI {
 	startListeners() {
 		$('input[name="color"]').on('keyup', this.showColor.bind(this));
 		$('#startForm').on('submit', this.handlePlayerForm.bind(this));
-		$('#newGame').on('click', this.startNewGame.bind(this));
+		$('#gamesList').on('click', 'li', this.joinGame.bind(this));
 		$(window).on('boardrendered', this.boardRendered.bind(this));
 	}
 
@@ -42,13 +42,42 @@ class UI {
 		});
 	}
 
+	joinGame(e) {
+		e.preventDefault();
+		var gameId = $(e.currentTarget).data('game');
+		this.app.server.joinGame(gameId);
+	}
+
 	enableButtons(group) {
 		return true;
 	}
 
 	doGameLobby(players, game) {
 		$('#startGame').on('click', game.start.bind(game));
+		this.hideGamesList();
 		this.renderPlayersList(players)
+	}
+
+	doMainLobby(games) {
+		console.log(games);
+		$('#newGame').on('click', this.startNewGame.bind(this));
+		this.renderGamesList(games);
+	}
+
+	hideGamesList() {
+		$('.games-list').slideUp();
+	}
+
+	renderGamesList(games) {
+		$('.games-list').slideDown();
+		for(var game in games) {
+			this.addToGamesList(games[game]);
+		}
+	}
+
+	addToGamesList(game) {
+		var $template = $('<li data-game="'+ game.id +'"><h4>Host: ' + game.host.name + '</h4></li>');
+		$('#gamesList').append($template);
 	}
 
 	startNewGame(e) {

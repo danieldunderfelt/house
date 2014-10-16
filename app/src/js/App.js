@@ -16,15 +16,19 @@ class App {
 		this.front = new UI(this);
 		this.front.initialize();
 
-		/*if(location.hostname === "localhost") {
+		if(location.hostname === "localhost") {
 			this.localPlayer = new Participant("Daniel", "green");
 			this.initializeGame();
-		}*/
+		}
 	}
 
 	initializeGame() {
 		this.front.showGame();
 		this.server.connect();
+	}
+
+	getGamesList(games) {
+		this.front.doMainLobby(games);
 	}
 
 	getLocalPlayer(data) {
@@ -52,9 +56,19 @@ class App {
 		}
 	}
 
+	joinAsGuest(gameData) {
+		if(this.isOnline) {
+			this.localPlayer.isHost = false;
+			this.game = new Game(this);
+			this.game.initialize(gameData);
+		}
+		else {
+			console.log("Not online :(");
+		}
+	}
+
 	setOnline() {
 		this.isOnline = true;
-		this.front.enableButtons('initial-controls');
 	}
 
 	setOffline() {

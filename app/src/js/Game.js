@@ -7,19 +7,24 @@ class Game {
 		this.currentGameId = null;
 		this.board = {};
 		this.players = {};
+		this.host = "";
 		this.initialized = false;
 	}
 
 	initialize(gameData) {
-		if(!this.initialized) {
-			this.initialized = true;
-			this.players = gameData.players;
-			this.currentGameId = gameData.id;
-			this.app.front.doGameLobby(this.players, this);
+		this.initialized = true;
+		this.players = gameData.players;
+
+		for(var player in gameData.players) {
+			if(gameData.players[player].isHost) {
+				this.host = gameData.players[player].id;
+				break;
+			}
 		}
-		else {
-			this.addPlayer(gameData);
-		}
+
+		this.currentGameId = gameData.id;
+		this.app.front.doGameLobby(this.players, this);
+		this.app.server.listenForPlayers(this, this.addPlayer);
 	}
 
 	addPlayer(playerData) {
@@ -41,7 +46,7 @@ class Game {
 	}
 
 	turn(playerId) {
-		console.log()
+		console.log(playerId);
 	}
 
 	startTurn() {

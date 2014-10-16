@@ -14502,7 +14502,7 @@ function isBuf(obj) {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],43:[function(require,module,exports){
 module.exports=require(36)
-},{"D:\\projects\\house\\app\\node_modules\\socket.io-client\\node_modules\\has-binary\\node_modules\\isarray\\index.js":36}],44:[function(require,module,exports){
+},{"/Users/ddunderfelt/projects/house/app/node_modules/socket.io-client/node_modules/has-binary/node_modules/isarray/index.js":36}],44:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -19221,22 +19221,19 @@ var Server = require('./Server');
 var App = function App() {
   this.localPlayer = {};
   this.server = new Server(this);
+  this.isOnline = false;
+  this.game;
 };
 ($traceurRuntime.createClass)(App, {
   start: function() {
     this.front = new UI(this);
     this.front.initialize();
-    if (location.hostname === "localhost") {
-      this.localPlayer = new Participant("Daniel", "green", true);
-      this.initializeGame();
-    }
   },
   initializeGame: function() {
     this.front.showGame();
-    this.bootGame();
     this.server.connect();
   },
-  getlocalPlayer: function(data) {
+  getLocalPlayer: function(data) {
     var name = "Awesome player";
     var color = "#FF0000";
     for (var d = 0; d < data.length; d++) {
@@ -19246,12 +19243,24 @@ var App = function App() {
       if (dataElement.name === "color")
         color = dataElement.value;
     }
-    this.localPlayer = new Participant(name, color, true);
+    this.localPlayer = new Participant(name, color);
     this.initializeGame();
   },
-  bootGame: function() {
-    this.game = new Game(this);
-    this.game.initialize(this.localPlayer);
+  newGame: function() {
+    if (this.isOnline) {
+      this.localPlayer.isHost = true;
+      this.game = new Game(this);
+      this.server.hostGame(this.localPlayer, this.game, this.game.initialize);
+    } else {
+      console.log("Not online :(");
+    }
+  },
+  setOnline: function() {
+    this.isOnline = true;
+    this.front.enableButtons('initial-controls');
+  },
+  setOffline: function() {
+    this.isOnline = false;
   }
 }, {});
 module.exports = new App();
@@ -19408,13 +19417,15 @@ var Borders = function Borders(board) {
     this.canvas.addEventListener('click', this.placeLine.bind(this));
   },
   indicateLine: function(e) {
-    var coords = this.getLinePosition(e.offsetX, e.offsetY, e.movementX, e.movementY);
-    if (this.coordsChanged(coords)) {
-      this.setIndicatorData(coords);
+    if (this.board.active) {
+      var coords = this.getLinePosition(e.offsetX, e.offsetY, e.movementX, e.movementY);
+      if (this.coordsChanged(coords)) {
+        this.setIndicatorData(coords);
+      }
     }
   },
   placeLine: function() {
-    if (this.placementAllowed()) {
+    if (this.board.active && this.placementAllowed()) {
       this.linesClaimed.push(this.refinedCoords);
       this.board.claimBorder(this.indicatorData);
     }
@@ -19480,7 +19491,7 @@ var Borders = function Borders(board) {
   },
   renderIndicator: function() {
     var self = this;
-    if (this.doRender) {
+    if (this.doRender && this.board.active) {
       requestAnimationFrame(this.drawIndicator.bind(this));
     }
   },
@@ -19627,49 +19638,64 @@ module.exports = Cell;
 var Board = require('./Board');
 var Game = function Game(app) {
   this.app = app;
+  this.currentGameId = null;
   this.board = {};
   this.players = {};
-  this.localPlayer = {};
-  this.isStarted = false;
-  this.currentPlayerTurn = null;
+  this.initialized = false;
 };
 ($traceurRuntime.createClass)(Game, {
-  initialize: function(initialPlayer) {
-    this.localPlayer = initialPlayer;
-    this.addPlayer(this.localPlayer);
-    this.app.front.renderPlayersList(this.players);
-  },
-  addPlayer: function(player) {
-    this.players[player.name] = player;
-  },
-  start: function() {
-    if (!this.isStarted) {
-      this.isStarted = true;
-      this.board = new Board(this);
-      this.board.render(10);
-      this.turnLoop();
+  initialize: function(gameData) {
+    if (!this.initialized) {
+      this.initialized = true;
+      this.players = gameData.players;
+      this.currentGameId = gameData.id;
+      this.app.front.doGameLobby(this.players, this);
+    } else {
+      this.addPlayer(gameData);
     }
   },
-  getPlayer: function() {
-    return this.localPlayer;
+  addPlayer: function(playerData) {
+    this.players[playerData.id] = playerData;
+    this.app.front.renderPlayersList(this.players);
   },
-  playerScored: function() {}
+  start: function() {
+    this.isStarted = true;
+    this.board = new Board(this);
+    this.board.render(10);
+    this.app.server.startGame(this.id, this, this.turn);
+  },
+  playerScored: function() {
+    var scorer = this.app.localPlayer;
+    return scorer;
+  },
+  turn: function(playerId) {
+    console.log();
+  },
+  startTurn: function() {
+    this.board.active = true;
+  },
+  endTurn: function() {
+    this.board.active = false;
+  }
 }, {});
 module.exports = Game;
 
 
 },{"./Board":48}],52:[function(require,module,exports){
 "use strict";
-var Participant = function Participant(name, color, isHost) {
+var uuid = require('./helpers').uuid;
+var Participant = function Participant(name, color) {
+  this.id = uuid();
   this.name = name;
   this.color = color;
   this.score = 0;
   this.cellsClaimed = [];
   this.winner = false;
-  this.isHost = isHost;
+  this.isHost = false;
 };
 ($traceurRuntime.createClass)(Participant, {getInfo: function() {
     return {
+      id: this.id,
       name: this.name,
       color: this.color,
       points: this.points,
@@ -19679,15 +19705,44 @@ var Participant = function Participant(name, color, isHost) {
 module.exports = Participant;
 
 
-},{}],53:[function(require,module,exports){
+},{"./helpers":55}],53:[function(require,module,exports){
 "use strict";
 var io = require('socket.io-client');
 var Server = function Server(app) {
   this.app = app;
+  this.socket = null;
+  this.isConnected = false;
 };
-($traceurRuntime.createClass)(Server, {connect: function() {
-    var socket = io('http://192.168.10.10:3000');
-  }}, {});
+($traceurRuntime.createClass)(Server, {
+  connect: function() {
+    var self = this;
+    if (!this.socket && !this.isConnected) {
+      this.socket = io('ws://house.dev:3000/house');
+      this.socket.on('connect', function(data) {
+        self.initialize();
+      });
+      this.socket.on('connect_error', function(error) {
+        self.isConnected = false;
+        self.app.setOffline();
+      });
+    }
+  },
+  initialize: function() {
+    this.isConnected = true;
+    this.app.setOnline();
+  },
+  hostGame: function(player, gameInstance, callback) {
+    this.socket.emit('new-game', player);
+    this.socket.on('game-joined', callback.bind(gameInstance));
+  },
+  listenForPlayers: function(gameInstance, callback) {
+    this.socket.on('player-joined', callback.bind(gameInstance));
+  },
+  startGame: function(gameId, gameInstance, callback) {
+    this.socket.emit('start-game', gameId);
+    this.socket.on('turn', callback.bind(gameInstance));
+  }
+}, {});
 module.exports = Server;
 
 
@@ -19728,6 +19783,13 @@ var UI = function UI(app) {
       }
     });
   },
+  enableButtons: function(group) {
+    return true;
+  },
+  doGameLobby: function(players, game) {
+    $('#startGame').on('click', game.start.bind(game));
+    this.renderPlayersList(players);
+  },
   startNewGame: function(e) {
     e.preventDefault();
     this.app.newGame();
@@ -19737,6 +19799,7 @@ var UI = function UI(app) {
     console.log("board rendered!");
   },
   renderPlayersList: function(players) {
+    $('#participants').empty();
     for (var player in players) {
       this.addToPlayerList(players[player]);
     }
@@ -19758,6 +19821,17 @@ module.exports = UI;
 
 },{"jquery":1,"velocity-animate":46}],55:[function(require,module,exports){
 "use strict";
+module.exports = {uuid: function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0,
+          v = c == 'x' ? r : r & 0x3 | 0x8;
+      return v.toString(16);
+    });
+  }};
+
+
+},{}],56:[function(require,module,exports){
+"use strict";
 var App = require('./App');
 window.$ = require('jquery');
 $(function() {
@@ -19765,4 +19839,4 @@ $(function() {
 });
 
 
-},{"./App":47,"jquery":1}]},{},[55]);
+},{"./App":47,"jquery":1}]},{},[56]);

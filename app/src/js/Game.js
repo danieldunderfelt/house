@@ -4,39 +4,52 @@ class Game {
 
 	constructor(app) {
 		this.app = app;
+		this.currentGameId = null;
 		this.board = {};
 		this.players = {};
-		this.localPlayer = {};
-		this.isStarted = false;
-		this.currentPlayerTurn = null;
+		this.initialized = false;
 	}
 
-	initialize(initialPlayer) {
-		this.localPlayer = initialPlayer;
-		this.addPlayer(this.localPlayer);
-		this.app.front.renderPlayersList(this.players);
-	}
-
-	addPlayer(player) {
-		this.players[player.name] = player;
-	}
-
-	start() {
-		if(!this.isStarted) {
-			this.isStarted = true;
-			this.board = new Board(this);
-			this.board.render(10);
-
-			this.turnLoop();
+	initialize(gameData) {
+		if(!this.initialized) {
+			this.initialized = true;
+			this.players = gameData.players;
+			this.currentGameId = gameData.id;
+			this.app.front.doGameLobby(this.players, this);
+		}
+		else {
+			this.addPlayer(gameData);
 		}
 	}
 
-	getPlayer() {
-		return this.localPlayer;
+	addPlayer(playerData) {
+		this.players[playerData.id] = playerData;
+		this.app.front.renderPlayersList(this.players);
+	}
+
+	start() {
+		this.isStarted = true;
+		this.board = new Board(this);
+		this.board.render(10);
+
+		this.app.server.startGame(this.id, this, this.turn);
 	}
 
 	playerScored() {
+		var scorer = this.app.localPlayer;
+		return scorer;
+	}
 
+	turn(playerId) {
+		console.log()
+	}
+
+	startTurn() {
+		this.board.active = true;
+	}
+
+	endTurn() {
+		this.board.active = false;
 	}
 }
 

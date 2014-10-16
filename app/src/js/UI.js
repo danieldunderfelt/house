@@ -42,6 +42,15 @@ class UI {
 		});
 	}
 
+	enableButtons(group) {
+		return true;
+	}
+
+	doGameLobby(players, game) {
+		$('#startGame').on('click', game.start.bind(game));
+		this.renderPlayersList(players)
+	}
+
 	startNewGame(e) {
 		e.preventDefault();
 		this.app.newGame();
@@ -53,6 +62,7 @@ class UI {
 	}
 
 	renderPlayersList(players) {
+		$('#participants').empty();
 		for(var player in players) {
 			this.addToPlayerList(players[player]);
 		}

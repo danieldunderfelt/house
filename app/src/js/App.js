@@ -8,26 +8,26 @@ class App {
 	constructor() {
 		this.localPlayer = {};
 		this.server = new Server(this);
+		this.isOnline = false;
+		this.game
 	}
 
 	start() {
 		this.front = new UI(this);
 		this.front.initialize();
 
-		if(location.hostname === "localhost") {
-			this.localPlayer = new Participant("Daniel", "green", true);
+		/*if(location.hostname === "localhost") {
+			this.localPlayer = new Participant("Daniel", "green");
 			this.initializeGame();
-		}
+		}*/
 	}
 
 	initializeGame() {
 		this.front.showGame();
-		this.bootGame();
-
-		this.server.connect()
+		this.server.connect();
 	}
 
-	getlocalPlayer(data) {
+	getLocalPlayer(data) {
 		var name = "Awesome player";
 		var color = "#FF0000";
 
@@ -37,13 +37,28 @@ class App {
 			if(dataElement.name === "color") color = dataElement.value;
 		}
 
-		this.localPlayer = new Participant(name, color, true);
+		this.localPlayer = new Participant(name, color);
 		this.initializeGame();
 	}
 
-	bootGame() {
-		this.game = new Game(this);
-		this.game.initialize(this.localPlayer);
+	newGame() {
+		if(this.isOnline) {
+			this.localPlayer.isHost = true;
+			this.game = new Game(this);
+			this.server.hostGame(this.localPlayer, this.game, this.game.initialize);
+		}
+		else {
+			console.log("Not online :(");
+		}
+	}
+
+	setOnline() {
+		this.isOnline = true;
+		this.front.enableButtons('initial-controls');
+	}
+
+	setOffline() {
+		this.isOnline = false;
 	}
 }
 

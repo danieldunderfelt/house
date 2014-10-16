@@ -40,14 +40,16 @@ class Borders {
 	}
 
 	indicateLine(e) {
-		var coords = this.getLinePosition(e.offsetX, e.offsetY, e.movementX, e.movementY);
-		if(this.coordsChanged(coords)) {
-			this.setIndicatorData(coords);
+		if(this.board.active) {
+			var coords = this.getLinePosition(e.offsetX, e.offsetY, e.movementX, e.movementY);
+			if(this.coordsChanged(coords)) {
+				this.setIndicatorData(coords);
+			}
 		}
 	}
 
 	placeLine() {
-		if(this.placementAllowed()) {
+		if(this.board.active && this.placementAllowed()) {
 			this.linesClaimed.push(this.refinedCoords);
 			this.board.claimBorder(this.indicatorData);
 		}
@@ -125,7 +127,7 @@ class Borders {
 
 	renderIndicator() {
 		var self = this;
-		if(this.doRender) {
+		if(this.doRender && this.board.active) {
 			requestAnimationFrame(this.drawIndicator.bind(this));
 		}
 	}
@@ -136,6 +138,7 @@ class Borders {
 		this.drawClaimed();
 		this.refinedCoords = this.getRefinedCoords();
 		this.drawLine(this.refinedCoords, '#999999');
+
 		this.renderIndicator();
 	}
 

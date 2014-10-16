@@ -2,13 +2,23 @@ global.$traceurRuntime = require('traceur-runtime');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-
 var GameManager = require('./GameManager');
 
-io.on('connection', function(socket) {
-  console.log('a user connected');
+var masterChannel = io.of('/house');
+
+var games = new GameManager(masterChannel);
+games.initialize();
+
+masterChannel.on('connection', function(socket) {
+	console.log("A user connected :D");
+	games.attachClient(socket);
+
+	socket.on('disconnect', function(socket) {
+		console.log("A user disconnected :(");
+		games.removeClient(socket.id);
+	});
 });
 
 http.listen(3000, function() {
-  console.log('listening on *:3000');
+	console.log('listening on *:3000');
 });

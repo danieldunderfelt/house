@@ -22,7 +22,8 @@ gulp.task('browser-sync', function() {
 	browserSync({
 		proxy: "house.dev",
 		open: false,
-		notify: false
+		notify: false,
+		ghostMode: false
 	});
 });
 

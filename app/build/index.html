@@ -26,18 +26,26 @@
 	</section>
 	<main class="main-game container-fluid">
 		<div class="row">
-			<nav class="col-md-3 control">
-				<ul class="initial-controls">
-					<li>
-						<button type="button" id="newGame">Host a new game</button>
-					</li>
-				</ul>
-				<ul class="host-controls">
-					<li>
-						<button type="button" id="startGame">Start game</button>
-					</li>
-				</ul>
-			</nav>
+			<div class="row col-md-3">
+				<nav class="control">
+					<ul class="initial-controls">
+						<li>
+							<button type="button" id="newGame">Host a new game</button>
+						</li>
+					</ul>
+					<ul class="host-controls">
+						<li>
+							<button type="button" id="startGame">Start game</button>
+						</li>
+					</ul>
+				</nav>
+				<nav class="games-list">
+					<h3>Open games:</h3>
+					<ul id="gamesList">
+
+					</ul>
+				</nav>
+			</div>
 			<section class="board-container col-md-6">
 				<div id="board" class="board">
 					<canvas id="borders" width="600" height="600"></canvas>

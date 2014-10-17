@@ -6,16 +6,22 @@ class GameRoom {
 
 		this.isStarted = false;
 		this.players = {};
+		this.host = {};
 	}
 
 	initialize(host) {
 		this.addPlayer(host);
+
+		this.host = {
+			name: host.player.name,
+			id: host.player.id
+		};
 	}
 
 	addPlayer(player) {
 		this.players[player.player.id] = player;
-		this.joinPlayer(player.client);
-		this.games.tell(this.id, 'player-joined', player.player);
+		this.joinPlayer(this.games.connectedClients[player.client].client);
+		this.tell('player-joined', player.player);
 	}
 
 	joinPlayer(client) {
@@ -28,13 +34,11 @@ class GameRoom {
 	}
 
 	getPlayers() {
-		var players = {};
+		return this.players;
+	}
 
-		for(var player in this.players) {
-			players[player] = this.players[player].player;
-		}
-
-		return players;
+	tell(eventId, data) {
+		this.games.tell(this.id, eventId, data);
 	}
 }
 

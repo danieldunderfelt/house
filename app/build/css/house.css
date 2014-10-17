@@ -19,29 +19,32 @@ ul {
   margin: 0;
   padding: 0; }
 
-.participants {
-  margin-left: 3em;
+.participants, .games-list {
   background: #e9e9e9;
   padding: 0; }
-  .participants h3 {
+  .participants h3, .games-list h3 {
     padding: 0 1em; }
-  .participants li {
+  .participants li, .games-list li {
     margin: 0;
     padding: 1em;
     background: #777;
     color: white;
     position: relative;
     border-bottom: 1px solid white; }
-    .participants li .host {
+    .participants li .host, .games-list li .host {
       text-transform: uppercase;
       font-weight: bold;
       font-size: 0.8em;
       color: #ddd; }
-    .participants li .score {
+    .participants li .score, .games-list li .score {
       position: absolute;
       font-size: 2em;
       right: 10px;
       top: 5px; }
+
+.games-list {
+  margin-top: 2em;
+  display: none; }
 
 h3 {
   font-size: 1em;

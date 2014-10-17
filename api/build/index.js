@@ -10,10 +10,6 @@ games.initialize();
 masterChannel.on('connection', function(socket) {
   console.log("A user connected :D");
   games.attachClient(socket);
-  socket.on('disconnect', function(socket) {
-    console.log("A user disconnected :(");
-    games.removeClient(socket.id);
-  });
 });
 http.listen(3000, function() {
   console.log('listening on *:3000');

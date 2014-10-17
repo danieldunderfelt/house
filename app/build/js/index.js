@@ -14502,7 +14502,7 @@ function isBuf(obj) {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],43:[function(require,module,exports){
 module.exports=require(36)
-},{"/Users/ddunderfelt/projects/house/app/node_modules/socket.io-client/node_modules/has-binary/node_modules/isarray/index.js":36}],44:[function(require,module,exports){
+},{"D:\\projects\\house\\app\\node_modules\\socket.io-client\\node_modules\\has-binary\\node_modules\\isarray\\index.js":36}],44:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -19228,10 +19228,17 @@ var App = function App() {
   start: function() {
     this.front = new UI(this);
     this.front.initialize();
+    if (location.hostname === "localhost") {
+      this.localPlayer = new Participant("Daniel", "green");
+      this.initializeGame();
+    }
   },
   initializeGame: function() {
     this.front.showGame();
     this.server.connect();
+  },
+  getGamesList: function(games) {
+    this.front.doMainLobby(games);
   },
   getLocalPlayer: function(data) {
     var name = "Awesome player";
@@ -19255,9 +19262,17 @@ var App = function App() {
       console.log("Not online :(");
     }
   },
+  joinAsGuest: function(gameData) {
+    if (this.isOnline) {
+      this.localPlayer.isHost = false;
+      this.game = new Game(this);
+      this.game.initialize(gameData);
+    } else {
+      console.log("Not online :(");
+    }
+  },
   setOnline: function() {
     this.isOnline = true;
-    this.front.enableButtons('initial-controls');
   },
   setOffline: function() {
     this.isOnline = false;
@@ -19641,18 +19656,22 @@ var Game = function Game(app) {
   this.currentGameId = null;
   this.board = {};
   this.players = {};
+  this.host = "";
   this.initialized = false;
 };
 ($traceurRuntime.createClass)(Game, {
   initialize: function(gameData) {
-    if (!this.initialized) {
-      this.initialized = true;
-      this.players = gameData.players;
-      this.currentGameId = gameData.id;
-      this.app.front.doGameLobby(this.players, this);
-    } else {
-      this.addPlayer(gameData);
+    this.initialized = true;
+    this.players = gameData.players;
+    for (var player in gameData.players) {
+      if (gameData.players[player].isHost) {
+        this.host = gameData.players[player].id;
+        break;
+      }
     }
+    this.currentGameId = gameData.id;
+    this.app.front.doGameLobby(this.players, this);
+    this.app.server.listenForPlayers(this, this.addPlayer);
   },
   addPlayer: function(playerData) {
     this.players[playerData.id] = playerData;
@@ -19669,7 +19688,7 @@ var Game = function Game(app) {
     return scorer;
   },
   turn: function(playerId) {
-    console.log();
+    console.log(playerId);
   },
   startTurn: function() {
     this.board.active = true;
@@ -19718,12 +19737,15 @@ var Server = function Server(app) {
     var self = this;
     if (!this.socket && !this.isConnected) {
       this.socket = io('ws://house.dev:3000/house');
-      this.socket.on('connect', function(data) {
+      this.socket.on('connect', function() {
         self.initialize();
       });
       this.socket.on('connect_error', function(error) {
         self.isConnected = false;
         self.app.setOffline();
+      });
+      this.socket.on('games-list', function(data) {
+        self.app.getGamesList(data);
       });
     }
   },
@@ -19734,6 +19756,13 @@ var Server = function Server(app) {
   hostGame: function(player, gameInstance, callback) {
     this.socket.emit('new-game', player);
     this.socket.on('game-joined', callback.bind(gameInstance));
+  },
+  joinGame: function(gameId) {
+    this.socket.emit('join-game', {
+      player: this.app.localPlayer,
+      game: gameId
+    });
+    this.socket.on('game-joined', this.app.joinAsGuest.bind(this.app));
   },
   listenForPlayers: function(gameInstance, callback) {
     this.socket.on('player-joined', callback.bind(gameInstance));
@@ -19760,7 +19789,7 @@ var UI = function UI(app) {
   startListeners: function() {
     $('input[name="color"]').on('keyup', this.showColor.bind(this));
     $('#startForm').on('submit', this.handlePlayerForm.bind(this));
-    $('#newGame').on('click', this.startNewGame.bind(this));
+    $('#gamesList').on('click', 'li', this.joinGame.bind(this));
     $(window).on('boardrendered', this.boardRendered.bind(this));
   },
   showColor: function(e) {
@@ -19783,12 +19812,36 @@ var UI = function UI(app) {
       }
     });
   },
+  joinGame: function(e) {
+    e.preventDefault();
+    var gameId = $(e.currentTarget).data('game');
+    this.app.server.joinGame(gameId);
+  },
   enableButtons: function(group) {
     return true;
   },
   doGameLobby: function(players, game) {
     $('#startGame').on('click', game.start.bind(game));
+    this.hideGamesList();
     this.renderPlayersList(players);
+  },
+  doMainLobby: function(games) {
+    console.log(games);
+    $('#newGame').on('click', this.startNewGame.bind(this));
+    this.renderGamesList(games);
+  },
+  hideGamesList: function() {
+    $('.games-list').slideUp();
+  },
+  renderGamesList: function(games) {
+    $('.games-list').slideDown();
+    for (var game in games) {
+      this.addToGamesList(games[game]);
+    }
+  },
+  addToGamesList: function(game) {
+    var $template = $('<li data-game="' + game.id + '"><h4>Host: ' + game.host.name + '</h4></li>');
+    $('#gamesList').append($template);
   },
   startNewGame: function(e) {
     e.preventDefault();

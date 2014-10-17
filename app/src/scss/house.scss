@@ -29,8 +29,7 @@ ul {
 	padding: 0;
 }
 
-.participants {
-	margin-left: 3em;
+.participants, .games-list {
 	background: #e9e9e9;
 	padding: 0;
 
@@ -60,6 +59,11 @@ ul {
 			top: 5px;
 		}
 	}
+}
+
+.games-list {
+	margin-top: 2em;
+	display: none;
 }
 
 h3 {

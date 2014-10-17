@@ -1,4 +1,4 @@
-var io = require('socket.io-client');
+	var io = require('socket.io-client');
 
 class Server {
 
@@ -14,13 +14,17 @@ class Server {
 		if(!this.socket && !this.isConnected) {
 			this.socket = io('ws://house.dev:3000/house');
 
-			this.socket.on('connect', function(data) {
+			this.socket.on('connect', function() {
 				self.initialize();
 			});
 
 			this.socket.on('connect_error', function(error) {
 				self.isConnected = false;
 				self.app.setOffline();
+			});
+
+			this.socket.on('games-list', function(data) {
+				self.app.getGamesList(data);
 			});
 		}
 	}
@@ -33,6 +37,11 @@ class Server {
 	hostGame(player, gameInstance, callback) {
 		this.socket.emit('new-game', player);
 		this.socket.on('game-joined', callback.bind(gameInstance));
+	}
+
+	joinGame(gameId) {
+		this.socket.emit('join-game', {player: this.app.localPlayer, game: gameId});
+		this.socket.on('game-joined', this.app.joinAsGuest.bind(this.app));
 	}
 
 	listenForPlayers(gameInstance, callback) {

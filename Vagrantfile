@@ -236,7 +236,7 @@ Vagrant.configure("2") do |config|
   # config.vm.provision "shell", path: "#{github_url}/scripts/redis.sh"
 
   # Provision Redis (with journaling and persistence)
-  # config.vm.provision "shell", path: "#{github_url}/scripts/redis.sh", args: "persistent"
+  config.vm.provision "shell", path: "#{github_url}/scripts/redis.sh", args: "persistent"
   # NOTE: It is safe to run this to add persistence even if originally provisioned without persistence
 
 

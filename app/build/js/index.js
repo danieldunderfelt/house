@@ -19288,6 +19288,7 @@ var Board = function Board(game) {
   this.renderedCells = 0;
   this.borders = {};
   this.active = false;
+  this.bordersClaimed = [];
 };
 ($traceurRuntime.createClass)(Board, {
   render: function(size) {
@@ -19304,6 +19305,15 @@ var Board = function Board(game) {
   addCell: function(cell) {
     this.$board.append(cell);
   },
+  getBoardStatus: function() {
+    return this.bordersClaimed;
+  },
+  setClaimed: function(coords) {
+    for (var coord = 0; coord < coords.length; coord++) {
+      this.borders.setLine.push(coords[coord]);
+    }
+    this.borders.drawClaimed();
+  },
   claimBorder: function(coords) {
     var cellData = this.getCellFromLineCoords(coords);
     var neighbor = this.getCellNeighbor(cellData);
@@ -19312,6 +19322,7 @@ var Board = function Board(game) {
     cellData.cell.claimBorder(cellBorder);
     if (neighbor !== null)
       neighbor.claimBorder(neighborBorder);
+    this.bordersClaimed.push(coords);
   },
   getCellFromLineCoords: function(coords) {
     var cell = null;

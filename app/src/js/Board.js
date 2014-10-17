@@ -12,6 +12,7 @@ class Board {
 		this.renderedCells = 0;
 		this.borders = {};
 		this.active = false;
+		this.bordersClaimed = [];
 	}
 
 	render(size) {
@@ -34,6 +35,17 @@ class Board {
 		this.$board.append(cell);
 	}
 
+	getBoardStatus() {
+		return this.bordersClaimed;
+	}
+
+	setClaimed(coords) {
+		for(var coord = 0; coord < coords.length; coord++) {
+			this.borders.setLine.push(coords[coord]);
+		}
+		this.borders.drawClaimed();
+	}
+
 	claimBorder(coords) {
 		var cellData = this.getCellFromLineCoords(coords);
 		var neighbor = this.getCellNeighbor(cellData);
@@ -45,6 +57,8 @@ class Board {
 
 		if(neighbor !== null)
 			neighbor.claimBorder(neighborBorder);
+
+		this.bordersClaimed.push(coords);
 	}
 
 	getCellFromLineCoords(coords) {

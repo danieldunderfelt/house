@@ -7,7 +7,7 @@ var GameManager = require('./GameManager');
 var masterChannel = io.of('/house');
 
 var games = new GameManager(masterChannel);
-games.initialize();
+games.initialize()
 
 masterChannel.on('connection', function(socket) {
 	console.log("A user connected :D");

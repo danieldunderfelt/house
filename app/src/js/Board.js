@@ -11,6 +11,27 @@ class Board {
 		this.cells = [];
 		this.renderedCells = 0;
 		this.borders = {};
+		this.active = false;
+	}
+
+	render(size) {
+		this.createGrid(size);
+		this.borders = new Borders(this);
+
+		for(var c = 0; c < this.grid.length; c++) {
+			var pos = this.grid[c];
+			var cell = new Cell(this, c, pos);
+
+			this.cells.push(cell);
+
+			cell.render(this.cellRendered.bind(this));
+		}
+
+		this.borders.renderInitial();
+	}
+
+	addCell(cell) {
+		this.$board.append(cell);
 	}
 
 	claimBorder(coords) {
@@ -21,7 +42,9 @@ class Board {
 		var neighborBorder = coords.track === "y" ? "left" : "top";
 
 		cellData.cell.claimBorder(cellBorder);
-		neighbor.claimBorder(neighborBorder);
+
+		if(neighbor !== null)
+			neighbor.claimBorder(neighborBorder);
 	}
 
 	getCellFromLineCoords(coords) {
@@ -54,26 +77,6 @@ class Board {
 			return this.cells[cellData.index + 10];
 		}
 		else return null;
-	}
-
-	render(size) {
-		this.createGrid(size);
-		this.borders = new Borders(this);
-
-		for(var c = 0; c < this.grid.length; c++) {
-			var pos = this.grid[c];
-			var cell = new Cell(this, c, pos);
-
-			this.cells.push(cell);
-
-			cell.render(this.cellRendered.bind(this));
-		}
-
-		this.borders.renderInitial();
-	}
-
-	addCell(cell) {
-		this.$board.append(cell);
 	}
 
 	createGrid(size) {

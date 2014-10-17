@@ -14502,7 +14502,7 @@ function isBuf(obj) {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],43:[function(require,module,exports){
 module.exports=require(36)
-},{"D:\\projects\\house\\app\\node_modules\\socket.io-client\\node_modules\\has-binary\\node_modules\\isarray\\index.js":36}],44:[function(require,module,exports){
+},{"/Users/ddunderfelt/projects/house/app/node_modules/socket.io-client/node_modules/has-binary/node_modules/isarray/index.js":36}],44:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -19222,7 +19222,8 @@ var App = function App() {
   this.localPlayer = {};
   this.server = new Server(this);
   this.isOnline = false;
-  this.game;
+  this.currentGame = {};
+  this.gamesList = {};
 };
 ($traceurRuntime.createClass)(App, {
   start: function() {
@@ -19232,13 +19233,6 @@ var App = function App() {
       this.localPlayer = new Participant("Daniel", "green");
       this.initializeGame();
     }
-  },
-  initializeGame: function() {
-    this.front.showGame();
-    this.server.connect();
-  },
-  getGamesList: function(games) {
-    this.front.doMainLobby(games);
   },
   getLocalPlayer: function(data) {
     var name = "Awesome player";
@@ -19253,20 +19247,20 @@ var App = function App() {
     this.localPlayer = new Participant(name, color);
     this.initializeGame();
   },
-  newGame: function() {
-    if (this.isOnline) {
-      this.localPlayer.isHost = true;
-      this.game = new Game(this);
-      this.server.hostGame(this.localPlayer, this.game, this.game.initialize);
-    } else {
-      console.log("Not online :(");
-    }
+  initializeGame: function() {
+    this.front.showGame();
+    this.server.connect();
   },
-  joinAsGuest: function(gameData) {
+  getGamesList: function(games) {
+    this.gamesList = games;
+  },
+  joinGame: function() {
+    var gameId = arguments[0] !== (void 0) ? arguments[0] : "new";
     if (this.isOnline) {
-      this.localPlayer.isHost = false;
-      this.game = new Game(this);
-      this.game.initialize(gameData);
+      this.currentGame = new Game(this);
+      this.server.registerGame(this.currentGame);
+      this.currentGame.initialize();
+      this.server.joinGame(gameId);
     } else {
       console.log("Not online :(");
     }
@@ -19293,15 +19287,31 @@ var Board = function Board(game) {
   this.cells = [];
   this.renderedCells = 0;
   this.borders = {};
+  this.active = false;
 };
 ($traceurRuntime.createClass)(Board, {
+  render: function(size) {
+    this.createGrid(size);
+    this.borders = new Borders(this);
+    for (var c = 0; c < this.grid.length; c++) {
+      var pos = this.grid[c];
+      var cell = new Cell(this, c, pos);
+      this.cells.push(cell);
+      cell.render(this.cellRendered.bind(this));
+    }
+    this.borders.renderInitial();
+  },
+  addCell: function(cell) {
+    this.$board.append(cell);
+  },
   claimBorder: function(coords) {
     var cellData = this.getCellFromLineCoords(coords);
     var neighbor = this.getCellNeighbor(cellData);
     var cellBorder = coords.track === "y" ? "right" : "bottom";
     var neighborBorder = coords.track === "y" ? "left" : "top";
     cellData.cell.claimBorder(cellBorder);
-    neighbor.claimBorder(neighborBorder);
+    if (neighbor !== null)
+      neighbor.claimBorder(neighborBorder);
   },
   getCellFromLineCoords: function(coords) {
     var cell = null;
@@ -19328,20 +19338,6 @@ var Board = function Board(game) {
       return this.cells[cellData.index + 10];
     } else
       return null;
-  },
-  render: function(size) {
-    this.createGrid(size);
-    this.borders = new Borders(this);
-    for (var c = 0; c < this.grid.length; c++) {
-      var pos = this.grid[c];
-      var cell = new Cell(this, c, pos);
-      this.cells.push(cell);
-      cell.render(this.cellRendered.bind(this));
-    }
-    this.borders.renderInitial();
-  },
-  addCell: function(cell) {
-    this.$board.append(cell);
   },
   createGrid: function(size) {
     var x = 0;
@@ -19407,7 +19403,7 @@ var Borders = function Borders(board) {
   this.ctx = this.canvas.getContext('2d');
   this.width = this.canvas.width;
   this.height = this.canvas.height;
-  this.linesClaimed = [];
+  this.setLine = [];
   this.indicatorData = null;
   this.refinedCoords = null;
   this.doRender = false;
@@ -19441,15 +19437,15 @@ var Borders = function Borders(board) {
   },
   placeLine: function() {
     if (this.board.active && this.placementAllowed()) {
-      this.linesClaimed.push(this.refinedCoords);
+      this.setLine.push(this.refinedCoords);
       this.board.claimBorder(this.indicatorData);
     }
   },
   placementAllowed: function() {
     var allowed = true;
     var checkCoords = this.refinedCoords;
-    for (var a = 0; a < this.linesClaimed.length; a++) {
-      if (JSON.stringify(checkCoords) === JSON.stringify(this.linesClaimed[a])) {
+    for (var a = 0; a < this.setLine.length; a++) {
+      if (JSON.stringify(checkCoords) === JSON.stringify(this.setLine[a])) {
         allowed = false;
       }
     }
@@ -19505,7 +19501,6 @@ var Borders = function Borders(board) {
     this.doRender = false;
   },
   renderIndicator: function() {
-    var self = this;
     if (this.doRender && this.board.active) {
       requestAnimationFrame(this.drawIndicator.bind(this));
     }
@@ -19519,8 +19514,8 @@ var Borders = function Borders(board) {
     this.renderIndicator();
   },
   drawClaimed: function() {
-    for (var c = 0; c < this.linesClaimed.length; c++) {
-      this.drawLine(this.linesClaimed[c]);
+    for (var c = 0; c < this.setLine.length; c++) {
+      this.drawLine(this.setLine[c]);
     }
   },
   drawLine: function(coords) {
@@ -19656,45 +19651,59 @@ var Game = function Game(app) {
   this.currentGameId = null;
   this.board = {};
   this.players = {};
-  this.host = "";
-  this.initialized = false;
+  this.currentActivePlayer = "";
+  this.localPlayer = "";
+  this.ready = false;
+  this.isStarted = false;
 };
 ($traceurRuntime.createClass)(Game, {
-  initialize: function(gameData) {
-    this.initialized = true;
-    this.players = gameData.players;
-    for (var player in gameData.players) {
-      if (gameData.players[player].isHost) {
-        this.host = gameData.players[player].id;
-        break;
-      }
-    }
-    this.currentGameId = gameData.id;
-    this.app.front.doGameLobby(this.players, this);
-    this.app.server.listenForPlayers(this, this.addPlayer);
+  initialize: function() {
+    this.localPlayer = this.app.localPlayer.id;
+    this.app.server.listenForPlayers(this.addPlayer);
+    this.app.server.sync(this.syncGame);
   },
   addPlayer: function(playerData) {
     this.players[playerData.id] = playerData;
-    this.app.front.renderPlayersList(this.players);
   },
-  start: function() {
-    this.isStarted = true;
-    this.board = new Board(this);
-    this.board.render(10);
-    this.app.server.startGame(this.id, this, this.turn);
+  syncGame: function(gameData) {
+    this.players = gameData.players;
+    if (!this.ready) {
+      this.currentGameId = gameData.id;
+      this.app.server.listenForGameStarted(this.startGame);
+      this.ready = true;
+    }
   },
-  playerScored: function() {
-    var scorer = this.app.localPlayer;
-    return scorer;
+  syncStatus: function(gameData) {},
+  syncTurn: function(turnData) {
+    this.currentActivePlayer = turnData.playerId;
+    if (turnData.playerId === this.localPlayer) {
+      this.myTurn();
+    }
   },
-  turn: function(playerId) {
-    console.log(playerId);
+  myTurn: function() {
+    this.startTurn();
   },
   startTurn: function() {
     this.board.active = true;
   },
   endTurn: function() {
     this.board.active = false;
+    this.app.server.turnEnd();
+  },
+  initializeStart: function() {
+    this.app.server.startGame(this.id);
+  },
+  startGame: function() {
+    if (!this.isStarted) {
+      this.isStarted = true;
+      this.board = new Board(this);
+      this.board.render(10);
+      this.startGameListeners();
+    }
+  },
+  startGameListeners: function() {
+    this.app.server.turn(this.syncTurn);
+    this.app.server.syncBoard(this.syncStatus);
   }
 }, {});
 module.exports = Game;
@@ -19740,36 +19749,56 @@ var Server = function Server(app) {
       this.socket.on('connect', function() {
         self.initialize();
       });
-      this.socket.on('connect_error', function(error) {
-        self.isConnected = false;
-        self.app.setOffline();
-      });
-      this.socket.on('games-list', function(data) {
-        self.app.getGamesList(data);
-      });
+      this.socket.on('connect_error', this.disconnect.bind(this));
     }
   },
   initialize: function() {
     this.isConnected = true;
+    this.getGamesList();
     this.app.setOnline();
   },
-  hostGame: function(player, gameInstance, callback) {
-    this.socket.emit('new-game', player);
-    this.socket.on('game-joined', callback.bind(gameInstance));
+  registerGame: function(gameInstance) {
+    this.currentGameInstance = gameInstance;
+  },
+  disconnect: function() {
+    this.isConnected = false;
+    this.app.setOffline();
+  },
+  getGamesList: function() {
+    this.socket.on('games-list', this.app.getGamesList.bind(this.app));
   },
   joinGame: function(gameId) {
     this.socket.emit('join-game', {
       player: this.app.localPlayer,
       game: gameId
     });
-    this.socket.on('game-joined', this.app.joinAsGuest.bind(this.app));
   },
-  listenForPlayers: function(gameInstance, callback) {
-    this.socket.on('player-joined', callback.bind(gameInstance));
+  listenForPlayers: function(callback) {
+    this.socket.on('player-joined', callback.bind(this.currentGameInstance));
   },
-  startGame: function(gameId, gameInstance, callback) {
+  startGame: function(gameId) {
     this.socket.emit('start-game', gameId);
-    this.socket.on('turn', callback.bind(gameInstance));
+  },
+  listenForGameStarted: function(callback) {
+    this.socket.on('game-started', callback.bind(this.currentGameInstance));
+  },
+  turn: function(callback) {
+    this.socket.on('turn', callback.bind(this.currentGameInstance));
+  },
+  turnEnd: function(data) {
+    this.socket.emit('turn-end', data);
+  },
+  wallPlaced: function(data) {
+    this.socket.emit('wall-placed', data);
+  },
+  score: function(data) {
+    this.socket.emit('player-scored', data);
+  },
+  sync: function(callback) {
+    this.socket.on('sync-game', callback.bind(this.currentGameInstance));
+  },
+  syncBoard: function(callback) {
+    this.socket.on('sync-board', callback.bind(this.currentGameInstance));
   }
 }, {});
 module.exports = Server;

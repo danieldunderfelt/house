@@ -89,7 +89,9 @@ Vagrant.configure("2") do |config|
 
   # Use NFS for the shared folder
   config.vm.synced_folder ".", "/vagrant", type: "rsync",
-    rsync__exclude: ".git/"
+    rsync__exclude: ".git/",
+    rsync__auto: true,
+    rsync__args: ["-a", "--verbose", "--archive", "--delete", "-z"]
 
   # If using VirtualBox
   config.vm.provider :virtualbox do |vb|

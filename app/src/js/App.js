@@ -9,7 +9,8 @@ class App {
 		this.localPlayer = {};
 		this.server = new Server(this);
 		this.isOnline = false;
-		this.game
+		this.currentGame = {};
+		this.gamesList = {};
 	}
 
 	start() {
@@ -20,15 +21,6 @@ class App {
 			this.localPlayer = new Participant("Daniel", "green");
 			this.initializeGame();
 		}
-	}
-
-	initializeGame() {
-		this.front.showGame();
-		this.server.connect();
-	}
-
-	getGamesList(games) {
-		this.front.doMainLobby(games);
 	}
 
 	getLocalPlayer(data) {
@@ -45,22 +37,21 @@ class App {
 		this.initializeGame();
 	}
 
-	newGame() {
-		if(this.isOnline) {
-			this.localPlayer.isHost = true;
-			this.game = new Game(this);
-			this.server.hostGame(this.localPlayer, this.game, this.game.initialize);
-		}
-		else {
-			console.log("Not online :(");
-		}
+	initializeGame() {
+		this.front.showGame();
+		this.server.connect();
 	}
 
-	joinAsGuest(gameData) {
+	getGamesList(games) {
+		this.gamesList = games;
+	}
+
+	joinGame(gameId = "new") {
 		if(this.isOnline) {
-			this.localPlayer.isHost = false;
-			this.game = new Game(this);
-			this.game.initialize(gameData);
+			this.currentGame = new Game(this);
+			this.server.registerGame(this.currentGame);
+			this.currentGame.initialize();
+			this.server.joinGame(gameId);
 		}
 		else {
 			console.log("Not online :(");

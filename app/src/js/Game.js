@@ -7,46 +7,49 @@ class Game {
 		this.currentGameId = null;
 		this.board = {};
 		this.players = {};
-		this.host = "";
-		this.initialized = false;
+		this.currentActivePlayer = "";
+		this.localPlayer = "";
+		this.ready = false;
+		this.isStarted = false;
 	}
 
-	initialize(gameData) {
-		this.initialized = true;
-		this.players = gameData.players;
-
-		for(var player in gameData.players) {
-			if(gameData.players[player].isHost) {
-				this.host = gameData.players[player].id;
-				break;
-			}
-		}
-
-		this.currentGameId = gameData.id;
-		this.app.front.doGameLobby(this.players, this);
-		this.app.server.listenForPlayers(this, this.addPlayer);
+	initialize() {
+		this.localPlayer = this.app.localPlayer.id;
+		this.app.server.listenForPlayers(this.addPlayer);
+		this.app.server.sync(this.syncGame);
 	}
 
+	// Event: 'player-joined'
 	addPlayer(playerData) {
 		this.players[playerData.id] = playerData;
-		this.app.front.renderPlayersList(this.players);
 	}
 
-	start() {
-		this.isStarted = true;
-		this.board = new Board(this);
-		this.board.render(10);
+	// Event: 'sync-game'
+	syncGame(gameData) {
+		this.players = gameData.players;
 
-		this.app.server.startGame(this.id, this, this.turn);
+		if(!this.ready) {
+			this.currentGameId = gameData.id;
+			this.app.server.listenForGameStarted(this.startGame);
+			this.ready = true;
+		}
 	}
 
-	playerScored() {
-		var scorer = this.app.localPlayer;
-		return scorer;
+	// Event: 'sync-board'
+	syncStatus(gameData) {
+
 	}
 
-	turn(playerId) {
-		console.log(playerId);
+	// Event: 'turn'
+	syncTurn(turnData) {
+		this.currentActivePlayer = turnData.playerId;
+		if(turnData.playerId === this.localPlayer) {
+			this.myTurn();
+		}
+	}
+
+	myTurn() {
+		this.startTurn();
 	}
 
 	startTurn() {
@@ -55,6 +58,25 @@ class Game {
 
 	endTurn() {
 		this.board.active = false;
+		this.app.server.turnEnd();
+	}
+
+	initializeStart() {
+		this.app.server.startGame(this.id);
+	}
+
+	startGame() {
+		if(!this.isStarted) {
+			this.isStarted = true;
+			this.board = new Board(this);
+			this.board.render(10);
+			this.startGameListeners();
+		}
+	}
+
+	startGameListeners() {
+		this.app.server.turn(this.syncTurn);
+		this.app.server.syncBoard(this.syncStatus);
 	}
 }
 

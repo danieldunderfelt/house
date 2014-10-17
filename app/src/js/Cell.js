@@ -87,8 +87,8 @@ class Cell {
 	celebrate() {
 		if(this.owner !== null) {
 			this.cell
-			.css('background-color', this.owner.color)
-			.text(this.owner.name);
+				.css('background-color', this.owner.color)
+				.text(this.owner.name);
 		}
 	}
 

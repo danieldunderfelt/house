@@ -11,7 +11,7 @@ class Borders {
 		this.width = this.canvas.width;
 		this.height = this.canvas.height;
 
-		this.linesClaimed = [];
+		this.setLine = [];
 
 		this.indicatorData = null;
 		this.refinedCoords = null;
@@ -50,7 +50,7 @@ class Borders {
 
 	placeLine() {
 		if(this.board.active && this.placementAllowed()) {
-			this.linesClaimed.push(this.refinedCoords);
+			this.setLine.push(this.refinedCoords);
 			this.board.claimBorder(this.indicatorData);
 		}
 	}
@@ -59,8 +59,8 @@ class Borders {
 		var allowed = true;
 		var checkCoords = this.refinedCoords;
 
-		for(var a = 0; a < this.linesClaimed.length; a++) {
-			if(JSON.stringify(checkCoords) === JSON.stringify(this.linesClaimed[a])) {
+		for(var a = 0; a < this.setLine.length; a++) {
+			if(JSON.stringify(checkCoords) === JSON.stringify(this.setLine[a])) {
 				allowed = false;
 			}
 		}
@@ -126,7 +126,6 @@ class Borders {
 	}
 
 	renderIndicator() {
-		var self = this;
 		if(this.doRender && this.board.active) {
 			requestAnimationFrame(this.drawIndicator.bind(this));
 		}
@@ -143,8 +142,8 @@ class Borders {
 	}
 
 	drawClaimed() {
-		for(var c = 0; c < this.linesClaimed.length; c++) {
-			this.drawLine(this.linesClaimed[c]);
+		for(var c = 0; c < this.setLine.length; c++) {
+			this.drawLine(this.setLine[c]);
 		}
 	}
 

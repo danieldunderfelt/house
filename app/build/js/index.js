@@ -19308,11 +19308,16 @@ var Board = function Board(game) {
   getBoardStatus: function() {
     return this.bordersClaimed;
   },
-  setClaimed: function(coords) {
+  setClaimedBorders: function(coords) {
     for (var coord = 0; coord < coords.length; coord++) {
       this.borders.setLine.push(coords[coord]);
     }
     this.borders.drawClaimed();
+  },
+  setClaimedCells: function(cells) {
+    for (var cell = 0; cell < cells.length; cell++) {
+      this.borders.setLine.push(cells[cell]);
+    }
   },
   claimBorder: function(coords) {
     var cellData = this.getCellFromLineCoords(coords);
@@ -19626,6 +19631,7 @@ var Cell = function Cell(board, index, pos) {
     this.displayBordersClaimed();
     this.checkClaimed();
   },
+  setCellOwner: function(player) {},
   displayBordersClaimed: function() {
     var count = 0;
     for (var border in this.bordersClaimed) {

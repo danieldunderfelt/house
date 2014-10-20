@@ -66,6 +66,10 @@ class Cell {
 		this.checkClaimed();
 	}
 
+	setCellOwner(player) {
+
+	}
+
 	displayBordersClaimed() {
 		var count = 0;
 		for(var border in this.bordersClaimed) {

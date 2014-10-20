@@ -43,6 +43,7 @@ class Game {
 	// Event: 'turn'
 	syncTurn(turnData) {
 		this.currentActivePlayer = turnData.playerId;
+
 		if(turnData.playerId === this.localPlayer) {
 			this.myTurn();
 		}

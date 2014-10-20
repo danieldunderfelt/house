@@ -39,11 +39,17 @@ class Board {
 		return this.bordersClaimed;
 	}
 
-	setClaimed(coords) {
+	setClaimedBorders(coords) {
 		for(var coord = 0; coord < coords.length; coord++) {
 			this.borders.setLine.push(coords[coord]);
 		}
 		this.borders.drawClaimed();
+	}
+
+	setClaimedCells(cells) {
+		for(var cell = 0; cell < cells.length; cell++) {
+			this.borders.setLine.push(cells[cell]);
+		}
 	}
 
 	claimBorder(coords) {

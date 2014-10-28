@@ -10,7 +10,7 @@ var games = new GameManager(masterChannel);
 games.initialize()
 
 masterChannel.on('connection', function(socket) {
-	console.log("A user connected :D");
+	console.log("A user connected :D yayyy");
 	games.attachClient(socket);
 });
 

@@ -14,6 +14,7 @@ class GameManager {
 
 	}
 
+	// Attaches a client to the server on the initial join.
 	attachClient(client) {
 		this.connectedClients[client.id] = {
 			client: client,
@@ -24,6 +25,7 @@ class GameManager {
 		this.socket.emit('games-list', this.getGamesList());
 	}
 
+	// Prepares a list of games to be served back to the client on server join
 	getGamesList() {
 		var games = {};
 
@@ -36,11 +38,10 @@ class GameManager {
 			}
 		}
 
-		console.log(games);
-
 		return games;
 	}
 
+	// When the client disconnects, we need to remove them from the server.
 	removeClient(client) {
 		console.log(client.id + " disconnected :(");
 
@@ -56,12 +57,14 @@ class GameManager {
 			delete this.connectedClients[client.id];
 	}
 
+	// Attaches initial listeners to the client
 	attachListeners(client) {
 		client.on('new-game', this.startNewGame.bind(this, client));
 		client.on('join-game', this.joinGame.bind(this, client));
 		client.on('disconnect', this.removeClient.bind(this, client));
 	}
 
+	// Starts a new game on the server. It attaches the host to the game.
 	startNewGame(client, data) {
 		var gameId = uuid();
 		var game = new GameRoom(this, gameId);
@@ -82,6 +85,7 @@ class GameManager {
 		game.initialize(player);
 	}
 
+	// Joins a new client to an exiting game
 	joinGame(client, data) {
 		var player = {
 			client: client.id,
@@ -93,11 +97,13 @@ class GameManager {
 		this.games[data.game].addPlayer(player);
 	}
 
+	// Pings the prescribed client with an event, without any data
 	ping(clientId, eventName, callback = function() {}) {
 		this.socket.to(clientId).emit(eventName);
 		callback();
 	}
 
+	// Sends some data to a client over some event
 	tell(clientId, eventName, data, callback = function() {}) {
 		this.socket.to(clientId).emit(eventName, data);
 		callback();
